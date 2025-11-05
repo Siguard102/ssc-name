@@ -1,6 +1,9 @@
-# Lightweight Dockerfile for local dev (runs "npm run dev")
-FROM node:18-alpine
+# Use Debian-slim base to avoid OpenSSL / musl issues when running Prisma
+FROM node:18-bullseye-slim
 WORKDIR /app
+
+# Install system deps required by Prisma and native modules
+RUN apt-get update && apt-get install -y ca-certificates openssl libssl-dev --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
 # copy package.json first to leverage cache
 COPY backend/package*.json ./
