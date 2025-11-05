@@ -1,66 +1,49 @@
-generator client {
-  provider = "prisma-client-js"
-}
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient()
+
+async function main() {
+  // Admin user (role = admin)
+  await prisma.user.upsert({
+    where: { mobile: '+9779800000000' },
+    update: {},
+    create: {
+      name: 'Admin',
+      mobile: '+9779800000000',
+      email: 'admin@smcnepal.test',
+      role: 'admin'
+    }
+  })
+
+  // ensure wallet
+  const admin = await prisma.user.findUnique({ where: { mobile: '+9779800000000' } })
+  if (admin) {
+    await prisma.wallet.upsert({
+      where: { userId: admin.id },
+      update: {},
+      create: { userId: admin.id, balance: 0, deposited: 0, withdrawn: 0 }
+    })
+  }
+
+  // sample tasks
+  await prisma.task.upsert({
+    where: { id: 1 },
+    update: {},
+    create: { title: 'Watch Ad 1', reward: 10 }
+  })
+  await prisma.task.upsert({
+    where: { id: 2 },
+    update: {},
+    create: { title: 'Watch Ad 2', reward: 8 }
+  })
+
+  console.log('Seed complete')
 }
 
-model User {
-  id         Int       @id @default(autoincrement())
-  name       String?
-  mobile     String    @unique
-  email      String?   @unique
-  password   String?   // optional: only for password-based flows
-  isActive   Boolean   @default(true)
-  role       String    @default("user")   // "user" or "admin"
-  createdAt  DateTime  @default(now())
-  wallet     Wallet?
-  tasks      TaskProgress[]
-}
-
-model Wallet {
-  id        Int     @id @default(autoincrement())
-  userId    Int     @unique
-  balance   Float   @default(0)
-  deposited Float   @default(0)
-  withdrawn Float   @default(0)
-  user      User    @relation(fields: [userId], references: [id])
-}
-
-model Deposit {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  amount    Float
-  status    String   @default("pending")
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-}
-
-model Withdrawal {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  amount    Float
-  method    String?
-  status    String   @default("pending")
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-}
-
-model Task {
-  id        Int     @id @default(autoincrement())
-  title     String
-  reward    Float
-  createdAt DateTime @default(now())
-  progresses TaskProgress[]
-}
-
-model TaskProgress {
-  id        Int     @id @default(autoincrement())
-  userId    Int
-  taskId    Int
-  completed Boolean @default(false)
-  progress  Int     @default(0)
-  user      User    @relation(fields: [userId], references: [id])
-  task      Task    @relation(fields: [taskId], references: [id])
-}
+main()
+  .catch(e => {
+    console.error(e)
+    process.exit(1)
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })
