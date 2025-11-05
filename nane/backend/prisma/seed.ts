@@ -1,0 +1,49 @@
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient()
+
+async function main() {
+  // Admin user (role = admin)
+  await prisma.user.upsert({
+    where: { mobile: '+9779800000000' },
+    update: {},
+    create: {
+      name: 'Admin',
+      mobile: '+9779800000000',
+      email: 'admin@smcnepal.test',
+      role: 'admin'
+    }
+  })
+
+  // ensure wallet
+  const admin = await prisma.user.findUnique({ where: { mobile: '+9779800000000' } })
+  if (admin) {
+    await prisma.wallet.upsert({
+      where: { userId: admin.id },
+      update: {},
+      create: { userId: admin.id, balance: 0, deposited: 0, withdrawn: 0 }
+    })
+  }
+
+  // sample tasks
+  await prisma.task.upsert({
+    where: { id: 1 },
+    update: {},
+    create: { title: 'Watch Ad 1', reward: 10 }
+  })
+  await prisma.task.upsert({
+    where: { id: 2 },
+    update: {},
+    create: { title: 'Watch Ad 2', reward: 8 }
+  })
+
+  console.log('Seed complete')
+}
+
+main()
+  .catch(e => {
+    console.error(e)
+    process.exit(1)
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })

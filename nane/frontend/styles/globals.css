@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* custom */
+:root {
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --muted: #6b7280;
+}
+.dark {
+  --bg: #0b1220;
+  --card: #071025;
+  --muted: #9ca3af;
+}
+body {
+  background: var(--bg);
+  color: #111827;
+}
+.dark body {
+  color: #e5e7eb;
+}
